@@ -1,0 +1,79 @@
+"""
+Contains both normal and advanced scoring functions for the strategy.
+"""
+import pandas as pd
+
+
+# --- Calculate Raw 200 Day Moving Average Score (Normal Scoring) ---
+def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False):
+    # Mandatory return computations
+    asset_data['Return'] = asset_data['price'].pct_change()
+    sp500_data['SP500_Return'] = sp500_data['Close'].pct_change()
+   
+    # 200-day moving average score
+    window = 200
+    asset_data['MA'] = asset_data['price'].rolling(window=window).mean()
+    asset_data['MA_Score'] = (asset_data['price'] - asset_data['MA']) / asset_data['MA']
+
+    # Weekly relative strength score
+    if smoothing:
+        asset_data = asset_data.resample('W').mean()
+        sp500_data = sp500_data.resample('W').mean()
+    else:
+        asset_data = asset_data.resample('W').last()
+        sp500_data = sp500_data.resample('W').last()
+    asset_data = asset_data.join(sp500_data['SP500_Return'], how='inner')
+    # positive = outperformed S&P 500, negative = underperformed S&P 500
+    asset_data['RS_Score'] = asset_data['Return'] - sp500_data['SP500_Return']
+
+    if advanced:
+        # 12-month momemtum score
+        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=252)
+
+        # Realized volatility (21 trading days in a month)
+        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=21).std()
+    
+    return asset_data
+
+# --- Compute normalized Z-score for each factor ---
+def normalize_scores_cross_sectional(asset_data, advanced=False):
+    if advanced:
+        factor_list=['MA_Score', 'RS_Score', 'MMTM_Score', 'REA_Volatility']
+    else:
+        factor_list=['MA_Score', 'RS_Score']
+    for score in factor_list:
+        asset_data[score + '_Norm'] = (asset_data[score] - asset_data[score].mean()) / asset_data[score].std()
+    return asset_data
+
+# --- Winsorize Z-scores at 5th and 95th percentiles ---
+def winsorize_scores(asset_data):
+    for score in ['MA_Score_Norm', 'RS_Score_Norm', 'MMTM_Score_Norm', 'REA_Volatility_Norm']:
+        lower_bound = asset_data[score].quantile(0.05)
+        upper_bound = asset_data[score].quantile(0.95)
+        asset_data[score] = asset_data[score].clip(lower=lower_bound, upper=upper_bound)
+    return asset_data
+
+# --- Create final composite score ---
+def create_final_composite_score(asset_data, advanced, weights):
+    if advanced:
+        factor_list=['MA_Score', 'RS_Score', 'MMTM_Score', 'REA_Volatility']
+    else:
+        factor_list=['MA_Score', 'RS_Score']
+    for score, weight in zip(factor_list, weights):
+        asset_data['Composite_Score'] = weight * asset_data[score]
+    return asset_data
+    
+# --- Main function to run the scoring process ---
+def compute_scoring(asset_data_list, sp500_df, advanced=False):
+    weights = [0.5, 0.5] if not advanced else [0.3, 0.3, 0.2, 0.2]
+
+    for asset_df in asset_data_list:
+        asset_df = calculate_raw_scores(asset_df, sp500_df, advanced=advanced, smoothing=False)
+        asset_df = normalize_scores_cross_sectional(asset_df, advanced=advanced)
+        if advanced:
+            asset_df = winsorize_scores(asset_df)
+        asset_df = create_final_composite_score(asset_df, advanced=advanced, weights=weights)
+
+    return asset_data_list
+
+
