@@ -5,7 +5,7 @@ based on the composite scores of the assets that passed the binary gate.
 
 import pandas as pd
 
-def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=15):
+def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=15, equal_weights=True):
     """
     Build three portfolios at a given timeframe.
 
@@ -34,10 +34,18 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
 
     # --- Step 1: find assets with data near timeframe ---
     for asset in scored_assets:
+        # skip if the asset has no rows (he maybe wasn't in the S&P 500 at that time)
+        if asset.empty:
+            continue
 
         # find closest date in dataframe
-        nearest_date = asset.index.get_indexer([target_date], method="nearest")[0]
+        nearest_idx = asset.index.get_indexer([target_date], method="nearest")
+        nearest_date = nearest_idx[0]
 
+        # if no valid date, continue (he maybe wasn't in the S&P 500 at that time)
+        if len(nearest_idx) == 0 or nearest_date == -1:
+            continue
+        
         row_date = asset.index[nearest_date]
 
         # check if within ±7 days (weekly rebalancing) or +-15 days (monthly rebalancing)
@@ -66,14 +74,23 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
 
     # --- Portfolio 1: Long Top 30 ---
     pf_long = list(top_assets["asset"])
-    pf_long_returns = top_assets["return"].mean()
+    if equal_weights:
+        pf_long_returns = top_assets["return"].mean()
+    else:
+        weights = top_assets["score"] / top_assets["score"].sum()
+        pf_long_returns = (weights * top_assets["return"]).sum()
 
     # --- Portfolio 2: Long / Short ---
     pf_long_short = {
         "long": list(top_assets["asset"]),
         "short": list(bottom_assets["asset"])
     }
-    pf_long_short_returns = top_assets["return"].mean() - bottom_assets["return"].mean()
+    if equal_weights:
+        pf_long_short_returns = top_assets["return"].mean() - bottom_assets["return"].mean()
+    else:
+        long_weights = top_assets["score"] / top_assets["score"].sum()
+        short_weights = bottom_assets["score"] / bottom_assets["score"].sum()
+        pf_long_short_returns = (long_weights * top_assets["return"]).sum() - (short_weights * bottom_assets["return"]).sum()
 
     # --- Portfolio 3: Factor mimicking ---
     n_half = len(tf_df) // 2
@@ -85,13 +102,23 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         "long": list(top_half["asset"]),
         "short": list(bottom_half["asset"])
     }
-    pf_mimicking_returns = top_half["return"].mean() - bottom_half["return"].mean()
+    if equal_weights:
+        pf_mimicking_returns = top_half["return"].mean() - bottom_half["return"].mean()
+    else:
+        long_weights = top_half["score"] / top_half["score"].sum()
+        short_weights = bottom_half["score"] / bottom_half["score"].sum()
+        pf_mimicking_returns = (long_weights * top_half["return"]).sum() - (short_weights * bottom_half["return"]).sum()
+
+    # Uncomment to test
+    # print(f"portfolio pf_long has {len(pf_long)} assets.")
+    # print(f"portfolio pf_long_short has {len(pf_long_short['long'])} long assets and {len(pf_long_short['short'])} short assets.")
+    # print(f"portfolio pf_mimicking has {len(pf_mimicking['long'])} long assets and {len(pf_mimicking['short'])} short assets.")
+    # print(f"Average return of pf_long: {pf_long_returns:.2%}")
+    # print(f"Average return of pf_long_short: {pf_long_short_returns:.2%}")
+    # print(f"Average return of pf_mimicking: {pf_mimicking_returns:.2%}") 
 
     return pf_long, pf_long_short, pf_mimicking, pf_long_returns, pf_long_short_returns, pf_mimicking_returns
 
-# Uncomment to test
-if __name__ == "__main__":
-    pass
 
 
 

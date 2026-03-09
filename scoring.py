@@ -66,12 +66,6 @@ def create_final_composite_score(asset_data, advanced, weights):
 # --- Main function to run the scoring process ---
 def compute_scoring(asset_data_list, sp500_df, advanced=False):
     weights = [0.5, 0.5] if not advanced else [0.3, 0.3, 0.2, 0.2]
-    sp500_df['Change %'] = (
-        sp500_df['Change %']
-        .str.replace('%', '', regex=False)
-        .astype(float) / 100
-    )
-    sp500_df = sp500_df.sort_index()
     
     for i, asset_df in enumerate(asset_data_list):
         asset_df = asset_df.sort_index()  # Ensure data is sorted by date

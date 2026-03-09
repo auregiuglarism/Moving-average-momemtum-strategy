@@ -41,7 +41,7 @@ def remove_empty_csv_files(folder_path='Data/Assets'):
     print(f"\nTotal removed files: {removed_files}")
 
 # --- Binary gate condition to save computation time ---
-def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
+def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly', timeframe='2009-01-01'):
     """
     Filters assets that pass the binary gate condition:
         1. Price > 200-day moving average
@@ -79,45 +79,72 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
     else:
         raise ValueError("rebalancing must be 'weekly' or 'monthly'")
     
+    target_date = pd.to_datetime(timeframe)
     # Loop through asset CSVs
     for filename in os.listdir(data_folder):
         if filename.endswith('.csv'):
             ticker = filename.replace('yfinance_', '').replace('.csv', '')
-            print(f"Processing {ticker}...") # know which asset is being processed
+            print(f"Processing {ticker}...")
             asset_path = os.path.join(data_folder, filename)
             asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
-            
-            # --- Binary gate calculations ---
-            asset_data_temp = asset_data.copy()  # make a temporary copy
+            asset_data_temp = asset_data.copy()
             asset_data_temp.sort_index()
-            asset_data_temp['MA200'] = asset_data_temp['price'].rolling(window=200).mean() # 200 trading days
-            
+
+            # --- Binary gate calculations ---
+            asset_data_temp['MA200'] = asset_data_temp['price'].rolling(window=200).mean()
+
             # Resample for RS
             if rebalancing == 'weekly':
                 asset_resampled = asset_data_temp.resample('W').last()
             else:
                 asset_resampled = asset_data_temp.resample('M').last()
-            
+
             asset_returns = asset_resampled['price'].pct_change()
             sp500_returns = sp500_resampled['Change %']
-            
+
             combined = pd.DataFrame({
                 'Asset_Return': asset_returns,
                 'SP500_Return': sp500_returns
             }).dropna()
-            
+
             combined['RS'] = combined['Asset_Return'] - combined['SP500_Return']
-            
-            # Latest values for binary condition
-            latest_price = asset_data_temp['price'].iloc[-1]
-            latest_ma200 = asset_data_temp['MA200'].iloc[-1]
-            latest_rs = combined['RS'].iloc[-1]
-            
-            if (latest_price > latest_ma200) and (latest_rs > 0):
+
+            # --- Find values at the rebalance date ---
+            price_idx = asset_data_temp.index.get_indexer([target_date], method="nearest")[0]
+            price_date = asset_data_temp.index[price_idx]
+
+            rs_idx = combined.index.get_indexer([target_date], method="nearest")[0]
+            rs_date = combined.index[rs_idx]
+
+            price = asset_data_temp.iloc[price_idx]['price']
+            ma200 = asset_data_temp.iloc[price_idx]['MA200']
+            rs = combined.iloc[rs_idx]['RS']
+
+            # optional tolerance
+            if abs((price_date - target_date).days) > 7:
+                continue
+
+            # binary gate
+            if (price > ma200) and (rs > 0):
                 stock_universe.append(ticker)
-                # Keep the original asset_data (just date, price, volume)
                 asset_data_dict[ticker] = asset_data.copy()
     
+    return stock_universe, asset_data_dict
+
+def prep_stock_universe(data_folder):
+    stock_universe = []
+    asset_data_dict = {}
+    
+    for filename in os.listdir(data_folder):
+        if filename.endswith('.csv'):
+            ticker = filename.replace('yfinance_', '').replace('.csv', '')
+            print(f"Processing {ticker}...")
+            stock_universe.append(ticker)
+
+            asset_path = os.path.join(data_folder, filename)
+            asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
+            asset_data_dict[ticker] = asset_data.copy()
+
     return stock_universe, asset_data_dict
 
 
@@ -127,6 +154,6 @@ if __name__ == "__main__":
     # remove_empty_csv_files()  # Run this only once to clean up empty files
     # data_folder = 'Data/Assets'
     # sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
-    # stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly')
+    # stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly', timeframe='2009-01-01')
     # print("Stock universe after binary gate:", stock_universe)
     # print ("Universe Size:", len(stock_universe), "stocks")
