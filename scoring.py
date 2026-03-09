@@ -80,19 +80,19 @@ def compute_scoring(asset_data_list, sp500_df, advanced=False):
 # Uncomment to test
 if __name__ == "__main__":
     pass
-    # asset = pd.read_csv('Data/Assets/yfinance_A.csv', parse_dates=['date'], index_col='date')
-    # sp500 = pd.read_csv('Data/S&P 500 Historical Data.csv', parse_dates=['Date'], index_col='Date')
-    # sp500['Change %'] = (
-    #     sp500['Change %']
-    #     .str.replace('%', '', regex=False)
-    #     .astype(float) / 100
-    # )
-    # asset = asset.sort_index()
-    # sp500 = sp500.sort_index()
-    # scored_asset = calculate_raw_scores(asset, sp500, advanced=True, smoothing=False)
-    # scored_asset.dropna(inplace=True)
-    # normalized_asset = normalize_scores_cross_sectional(scored_asset, advanced=True)
-    # winsorized_asset = winsorize_scores(normalized_asset)
-    # final_scored_asset = create_final_composite_score(winsorized_asset, advanced=True, weights=[0.3, 0.3, 0.2, 0.2])
-    # print(final_scored_asset.head())
+    asset = pd.read_csv('Data/Assets/yfinance_A.csv', parse_dates=['date'], index_col='date')
+    sp500 = pd.read_csv('Data/S&P 500 Historical Data.csv', parse_dates=['Date'], index_col='Date')
+    sp500['Change %'] = (
+        sp500['Change %']
+        .str.replace('%', '', regex=False)
+        .astype(float) / 100
+    )
+    asset = asset.sort_index()
+    sp500 = sp500.sort_index()
+    scored_asset = calculate_raw_scores(asset, sp500, advanced=True, smoothing=False)
+    scored_asset.dropna(inplace=True)
+    normalized_asset = normalize_scores_cross_sectional(scored_asset, advanced=True)
+    winsorized_asset = winsorize_scores(normalized_asset)
+    final_scored_asset = create_final_composite_score(winsorized_asset, advanced=True, weights=[0.3, 0.3, 0.2, 0.2])
+    print(final_scored_asset.head())
 

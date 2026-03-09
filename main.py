@@ -12,6 +12,7 @@ import pandas as pd
 
 from scoring import compute_scoring
 from binary_gate import filter_stock_universe
+# from portfolios import compute_portfolios
 
 
 if __name__ == "__main__":
@@ -30,6 +31,8 @@ if __name__ == "__main__":
         .astype(float) / 100
     )
     scored_assets = compute_scoring(asset_data_list, sp500_data, advanced=True)
+    print("Scoring completed for assets that passed the binary gate.")
+    print(scored_assets[0].head())  # Print the first scored asset as a sanity check
 
     # Now scored_assets contains the final composite scores for each asset that passed the binary gate
     # --- Step 3: We can compute portfolios ---
