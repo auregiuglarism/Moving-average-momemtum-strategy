@@ -5,7 +5,7 @@ based on the composite scores of the assets that passed the binary gate.
 
 import pandas as pd
 
-def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2007-01-01', rebalancing=7):
+def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=15):
     """
     Build three portfolios at a given timeframe.
 
@@ -19,7 +19,7 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2007-01-01'
     timeframe : str
         Target date for portfolio construction.
     rebalancing : int
-        Number of days for rebalancing window (e.g., 7 for weekly, 15 for monthly).
+        Number of days for rebalancing window (e.g., 15 for weekly, 30 for monthly).
 
     Returns
     -------

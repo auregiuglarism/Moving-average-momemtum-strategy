@@ -12,7 +12,7 @@ import pandas as pd
 
 from scoring import compute_scoring
 from binary_gate import filter_stock_universe
-# from portfolios import compute_portfolios
+from portfolios import compute_portfolios_timeframe
 
 
 if __name__ == "__main__":
@@ -27,9 +27,11 @@ if __name__ == "__main__":
     
     scored_assets = compute_scoring(asset_data_list, sp500_data, advanced=True)
     print("Scoring completed for assets that passed the binary gate.")
-    print(scored_assets[0].head())  # Print the first scored asset as a sanity check
 
     # Now scored_assets contains the final composite scores for each asset that passed the binary gate
     # --- Step 3: We can compute portfolios ---
-
+    pf_long, pf_long_short, pf_mimicking = compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=15)
+    print(f"portfolio pf_long has {len(pf_long)} assets.")
+    print(f"portfolio pf_long_short has {len(pf_long_short['long'])} long assets and {len(pf_long_short['short'])} short assets.")
+    print(f"portfolio pf_mimicking has {len(pf_mimicking['long'])} long assets and {len(pf_mimicking['short'])} short assets.")
 
