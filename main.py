@@ -71,11 +71,6 @@ if __name__ == "__main__":
             equal_weights=True
         )
 
-        # Update cumulative values for all 3 portfolios
-        portfolio_long_value *= (1 + r_long)
-        portfolio_ls_value *= (1 + r_ls)
-        portfolio_mim_value *= (1 + r_mim)
-
         portfolio_values.append({
             "date": end,
             "pf_long": portfolio_long_value,
@@ -88,19 +83,28 @@ if __name__ == "__main__":
 perf_df = pd.DataFrame(portfolio_values)
 perf_df.set_index("date", inplace=True)
 
-# Print final total returns
-print(f"Total return pf_long: {perf_df['pf_long'].iloc[-1]-1:.2%}")
-print(f"Total return pf_long_short: {perf_df['pf_long_short'].iloc[-1]-1:.2%}")
-print(f"Total return pf_mimicking: {perf_df['pf_mimicking'].iloc[-1]-1:.2%}")
+# Convert periodic returns to cumulative growth of $1
+cumulative_df = (1 + perf_df).cumprod()
 
-# Plot all three portfolios on the same graph
+# Print final total returns
+print(f"1$ with pf_long has return: {cumulative_df['pf_long'].iloc[-1]-1:.2%}")
+print(f"1$ with pf_long_short has return: {cumulative_df['pf_long_short'].iloc[-1]-1:.2%}")
+print(f"1$ with factor mimicking has return: {cumulative_df['pf_mimicking'].iloc[-1]-1:.2%}")
+
+# Resample to the same frequency as your portfolio rebalancing
+sp500_resampled = sp500_df['Change %'].resample('15D').sum()  # sum of returns over 15D
+sp500_cumulative = (1 + sp500_resampled).cumprod()
+sp500_cumulative = sp500_cumulative.loc[cumulative_df.index]  # align with portfolio dates
+
+# Plot all three portfolios on the same graph + S&P 500 for comparison
 plt.figure(figsize=(12,6))
-plt.plot(perf_df.index, perf_df['pf_long'], label='Long Top 30')
-plt.plot(perf_df.index, perf_df['pf_long_short'], label='Long-Short Top/Bottom 30')
-plt.plot(perf_df.index, perf_df['pf_mimicking'], label='Factor Mimicking')
-plt.title(f"Portfolio Performance (2009-2026) with {rebalancing_filter} Rebalancing")
+plt.plot(cumulative_df.index, cumulative_df['pf_long'], label='Long Top 30')
+plt.plot(cumulative_df.index, cumulative_df['pf_long_short'], label='Long-Short Top/Bottom 30')
+plt.plot(cumulative_df.index, cumulative_df['pf_mimicking'], label='Factor Mimicking')
+plt.plot(sp500_cumulative.index, sp500_cumulative.values, label='S&P 500', linestyle='--', color='black')
+plt.title("Growth of $1 Invested in Each Portfolio")
 plt.xlabel("Date")
-plt.ylabel("Cumulative Value")
+plt.ylabel("Portfolio Value ($)")
 plt.legend()
 plt.grid(True)
 plt.show()
