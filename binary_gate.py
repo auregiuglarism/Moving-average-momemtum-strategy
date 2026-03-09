@@ -6,6 +6,40 @@ only keep assets that satisfy the condition. Then we will compute the score in s
 import pandas as pd
 import os
 
+# --- Remove empty CSV files before processing, only run once inside this file directly. ---
+def remove_empty_csv_files(folder_path='Data/Assets'):
+    """
+    Deletes CSV files that contain headers but no data rows.
+
+    Parameters
+    ----------
+    folder_path : str
+        Path to folder containing CSV files
+    """
+
+    removed_files = 0
+
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".csv"):
+            file_path = os.path.join(folder_path, filename)
+
+            try:
+                df = pd.read_csv(file_path)
+
+                # Check if dataframe has no rows
+                if df.empty:
+                    os.remove(file_path)
+                    removed_files += 1
+                    print(f"Deleted empty file: {filename}")
+
+            except Exception as e:
+                # If file cannot be read, remove it
+                os.remove(file_path)
+                removed_files += 1
+                print(f"Deleted corrupted file: {filename}")
+
+    print(f"\nTotal removed files: {removed_files}")
+
 # --- Binary gate condition to save computation time ---
 def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
     """
@@ -39,9 +73,9 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
     
     # Resample S&P500
     if rebalancing == 'weekly':
-        sp500_resampled = sp500['Change %'].resample('W').last()
+        sp500_resampled = sp500.resample('W').last()
     elif rebalancing == 'monthly':
-        sp500_resampled = sp500['Change %'].resample('M').last()
+        sp500_resampled = sp500.resample('M').last()
     else:
         raise ValueError("rebalancing must be 'weekly' or 'monthly'")
     
@@ -49,6 +83,7 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
     for filename in os.listdir(data_folder):
         if filename.endswith('.csv'):
             ticker = filename.replace('.csv','')
+            print(f"Processing {ticker}...")
             asset_path = os.path.join(data_folder, filename)
             asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
             asset_data = asset_data.sort_index()
@@ -59,12 +94,12 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
             
             # Resample for RS
             if rebalancing == 'weekly':
-                asset_resampled = asset_data_temp['price'].resample('W').last()
+                asset_resampled = asset_data_temp.resample('W').last()
             else:
-                asset_resampled = asset_data_temp['price'].resample('M').last()
+                asset_resampled = asset_data_temp.resample('M').last()
             
-            asset_returns = asset_resampled.pct_change()
-            sp500_returns = sp500_resampled
+            asset_returns = asset_resampled['price'].pct_change()
+            sp500_returns = sp500_resampled['Change %']
             
             combined = pd.DataFrame({
                 'Asset_Return': asset_returns,
@@ -88,7 +123,8 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
 
 # Uncomment to test
 if __name__ == "__main__":
-    data_folder = 'Data/Assets'
-    sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
-    stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly')
-    print("Stock universe after binary gate:", stock_universe)
+    remove_empty_csv_files()  # Run this once to clean up empty files
+    # data_folder = 'Data/Assets'
+    # sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
+    # stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly')
+    # print("Stock universe after binary gate:", stock_universe)
