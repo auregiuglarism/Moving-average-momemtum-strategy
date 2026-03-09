@@ -86,10 +86,10 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
             print(f"Processing {ticker}...") # know which asset is being processed
             asset_path = os.path.join(data_folder, filename)
             asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
-            asset_data = asset_data.sort_index()
             
             # --- Binary gate calculations ---
             asset_data_temp = asset_data.copy()  # make a temporary copy
+            asset_data_temp.sort_index()
             asset_data_temp['MA200'] = asset_data_temp['price'].rolling(window=200).mean() # 200 trading days
             
             # Resample for RS
