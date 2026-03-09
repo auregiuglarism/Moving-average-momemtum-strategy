@@ -29,9 +29,14 @@ if __name__ == "__main__":
     print("Scoring completed for assets that passed the binary gate.")
 
     # Now scored_assets contains the final composite scores for each asset that passed the binary gate
-    # --- Step 3: We can compute portfolios ---
-    pf_long, pf_long_short, pf_mimicking = compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=15)
+    # --- Step 3: We can compute portfolios and their returns ---
+    pf_long, pf_long_short, pf_mimicking, pf_long_returns, pf_long_short_returns, pf_mimicking_returns = compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=15)
     print(f"portfolio pf_long has {len(pf_long)} assets.")
     print(f"portfolio pf_long_short has {len(pf_long_short['long'])} long assets and {len(pf_long_short['short'])} short assets.")
     print(f"portfolio pf_mimicking has {len(pf_mimicking['long'])} long assets and {len(pf_mimicking['short'])} short assets.")
+    print(f"Average return of pf_long: {pf_long_returns:.2%}")
+    print(f"Average return of pf_long_short: {pf_long_short_returns:.2%}")
+    print(f"Average return of pf_mimicking: {pf_mimicking_returns:.2%}")
+
+    
 

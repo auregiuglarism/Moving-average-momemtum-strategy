@@ -44,10 +44,12 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         if abs((row_date - target_date).days) <= rebalancing:
 
             score = asset.iloc[nearest_date]["Composite_Score"]
+            asset_return = asset.iloc[nearest_date]["Return"]
 
             timeframe_assets.append({
                 "asset": asset,
-                "score": score
+                "score": score,
+                "return": asset_return
             })
 
     # convert to dataframe for easier sorting
@@ -64,12 +66,14 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
 
     # --- Portfolio 1: Long Top 30 ---
     pf_long = list(top_assets["asset"])
+    pf_long_returns = top_assets["return"].mean()
 
     # --- Portfolio 2: Long / Short ---
     pf_long_short = {
         "long": list(top_assets["asset"]),
         "short": list(bottom_assets["asset"])
     }
+    pf_long_short_returns = top_assets["return"].mean() - bottom_assets["return"].mean()
 
     # --- Portfolio 3: Factor mimicking ---
     n_half = len(tf_df) // 2
@@ -81,8 +85,9 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         "long": list(top_half["asset"]),
         "short": list(bottom_half["asset"])
     }
+    pf_mimicking_returns = top_half["return"].mean() - bottom_half["return"].mean()
 
-    return pf_long, pf_long_short, pf_mimicking
+    return pf_long, pf_long_short, pf_mimicking, pf_long_returns, pf_long_short_returns, pf_mimicking_returns
 
 # Uncomment to test
 if __name__ == "__main__":
