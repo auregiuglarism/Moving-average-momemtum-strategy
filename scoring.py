@@ -6,9 +6,8 @@ import pandas as pd
 
 # --- Calculate Raw 200 Day Moving Average Score (Normal Scoring) ---
 def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False):
-    # Mandatory return computations
+    # Mandatory return computation
     asset_data['Return'] = asset_data['price'].pct_change()
-    sp500_data['SP500_Return'] = sp500_data['Close'].pct_change()
    
     # 200-day moving average score
     window = 200
@@ -22,16 +21,16 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
     else:
         asset_data = asset_data.resample('W').last()
         sp500_data = sp500_data.resample('W').last()
-    asset_data = asset_data.join(sp500_data['SP500_Return'], how='inner')
+    asset_data = asset_data.join(sp500_data['Change %'], how='inner') # SP500 return
     # positive = outperformed S&P 500, negative = underperformed S&P 500
-    asset_data['RS_Score'] = asset_data['Return'] - sp500_data['SP500_Return']
+    asset_data['RS_Score'] = asset_data['Return'] - asset_data['Change %'] 
 
     if advanced:
-        # 12-month momemtum score
-        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=252)
+        # 12-month momentum score
+        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=52) # 52 weeks in a year
 
         # Realized volatility (21 trading days in a month)
-        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=21).std()
+        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=4).std() # 4 weeks in a month
     
     return asset_data
 
@@ -59,8 +58,9 @@ def create_final_composite_score(asset_data, advanced, weights):
         factor_list=['MA_Score', 'RS_Score', 'MMTM_Score', 'REA_Volatility']
     else:
         factor_list=['MA_Score', 'RS_Score']
+    asset_data['Composite_Score'] = 0
     for score, weight in zip(factor_list, weights):
-        asset_data['Composite_Score'] = weight * asset_data[score]
+        asset_data['Composite_Score'] += weight * asset_data[score]
     return asset_data
     
 # --- Main function to run the scoring process ---
@@ -69,6 +69,7 @@ def compute_scoring(asset_data_list, sp500_df, advanced=False):
 
     for asset_df in asset_data_list:
         asset_df = calculate_raw_scores(asset_df, sp500_df, advanced=advanced, smoothing=False)
+        asset_df.dropna(inplace=True)
         asset_df = normalize_scores_cross_sectional(asset_df, advanced=advanced)
         if advanced:
             asset_df = winsorize_scores(asset_df)
@@ -76,4 +77,22 @@ def compute_scoring(asset_data_list, sp500_df, advanced=False):
 
     return asset_data_list
 
+# Uncomment to test
+if __name__ == "__main__":
+    pass
+    # asset = pd.read_csv('Data/Assets/yfinance_A.csv', parse_dates=['date'], index_col='date')
+    # sp500 = pd.read_csv('Data/S&P 500 Historical Data.csv', parse_dates=['Date'], index_col='Date')
+    # sp500['Change %'] = (
+    #     sp500['Change %']
+    #     .str.replace('%', '', regex=False)
+    #     .astype(float) / 100
+    # )
+    # asset = asset.sort_index()
+    # sp500 = sp500.sort_index()
+    # scored_asset = calculate_raw_scores(asset, sp500, advanced=True, smoothing=False)
+    # scored_asset.dropna(inplace=True)
+    # normalized_asset = normalize_scores_cross_sectional(scored_asset, advanced=True)
+    # winsorized_asset = winsorize_scores(normalized_asset)
+    # final_scored_asset = create_final_composite_score(winsorized_asset, advanced=True, weights=[0.3, 0.3, 0.2, 0.2])
+    # print(final_scored_asset.head())
 

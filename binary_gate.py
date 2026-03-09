@@ -30,13 +30,18 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
     
     # Load S&P 500 data
     sp500 = pd.read_csv(sp500_csv_path, parse_dates=['Date'], index_col='Date')
+    sp500['Change %'] = (
+        sp500['Change %']
+        .str.replace('%', '', regex=False)
+        .astype(float) / 100
+    )
     sp500 = sp500.sort_index()
     
     # Resample S&P500
     if rebalancing == 'weekly':
-        sp500_resampled = sp500['Close'].resample('W').last()
+        sp500_resampled = sp500['Change %'].resample('W').last()
     elif rebalancing == 'monthly':
-        sp500_resampled = sp500['Close'].resample('M').last()
+        sp500_resampled = sp500['Change %'].resample('M').last()
     else:
         raise ValueError("rebalancing must be 'weekly' or 'monthly'")
     
@@ -50,7 +55,7 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
             
             # --- Binary gate calculations ---
             asset_data_temp = asset_data.copy()  # make a temporary copy
-            asset_data_temp['MA200'] = asset_data_temp['price'].rolling(window=200).mean()
+            asset_data_temp['MA200'] = asset_data_temp['price'].rolling(window=200).mean() # 200 trading days
             
             # Resample for RS
             if rebalancing == 'weekly':
@@ -59,7 +64,7 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
                 asset_resampled = asset_data_temp['price'].resample('M').last()
             
             asset_returns = asset_resampled.pct_change()
-            sp500_returns = sp500_resampled.pct_change()
+            sp500_returns = sp500_resampled
             
             combined = pd.DataFrame({
                 'Asset_Return': asset_returns,
@@ -79,3 +84,11 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
                 asset_data_dict[ticker] = asset_data.copy()
     
     return stock_universe, asset_data_dict
+
+
+# Uncomment to test
+if __name__ == "__main__":
+    data_folder = 'Data/Assets'
+    sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
+    stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly')
+    print("Stock universe after binary gate:", stock_universe)
