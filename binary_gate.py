@@ -83,7 +83,7 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
     for filename in os.listdir(data_folder):
         if filename.endswith('.csv'):
             ticker = filename.replace('.csv','')
-            print(f"Processing {ticker}...")
+            print(f"Processing {ticker}...") # know which asset is being processed
             asset_path = os.path.join(data_folder, filename)
             asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
             asset_data = asset_data.sort_index()
@@ -123,8 +123,8 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly'):
 
 # Uncomment to test
 if __name__ == "__main__":
-    remove_empty_csv_files()  # Run this once to clean up empty files
-    # data_folder = 'Data/Assets'
-    # sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
-    # stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly')
-    # print("Stock universe after binary gate:", stock_universe)
+    # remove_empty_csv_files()  # Run this only once to clean up empty files
+    data_folder = 'Data/Assets'
+    sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
+    stock_universe, asset_data_dict = filter_stock_universe(data_folder, sp500_csv_path, rebalancing='weekly')
+    print("Stock universe after binary gate:", stock_universe)
