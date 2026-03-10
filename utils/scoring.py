@@ -3,7 +3,6 @@ Contains both normal and advanced scoring functions for the strategy.
 """
 import pandas as pd
 
-
 # --- Calculate Raw 200 Day Moving Average Score (Normal Scoring) ---
 def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False):
     # Mandatory return computation

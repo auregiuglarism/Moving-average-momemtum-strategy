@@ -11,14 +11,15 @@ pf_mimicking - one factor mimicking(purely factor driven to evaluate our strateg
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from scoring import compute_scoring
-from binary_gate import filter_stock_universe, prep_stock_universe
-from portfolios import compute_portfolios_timeframe
+from utils.scoring import compute_scoring
+from utils.binary_gate import filter_stock_universe, prep_stock_universe
+from utils.portfolios import compute_portfolios_timeframe
 
+DEBUG = True
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
-    data_folder = 'Data/tests' 
+    data_folder = 'Data/tests' if DEBUG else 'Data/Assets'
     sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
     sp500_data = pd.read_csv(sp500_csv_path, parse_dates=['Date'], index_col='Date')
     sp500_data['Change %'] = (
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     )
 
     rebalancing_filter = 'weekly' # or 'monthly'
-    rebalancing_portfolios = 15 # or 30 for monthly
+    rebalancing_portfolios = 7 # or 30 for monthly
 
     binary_gate = False
     # Only apply scoring once since no binary gate
@@ -70,13 +71,13 @@ if __name__ == "__main__":
             rebalancing=rebalancing_portfolios,
             equal_weights=True
         )
-
-        portfolio_values.append({
-            "date": end,
-            "pf_long": portfolio_long_value,
-            "pf_long_short": portfolio_ls_value,
-            "pf_mimicking": portfolio_mim_value
-        })
+        if pf_long is not None: # Else go to next timeframe, continue the loop
+            portfolio_values.append({
+                "date": end,
+                "pf_long": portfolio_long_value,
+                "pf_long_short": portfolio_ls_value,
+                "pf_mimicking": portfolio_mim_value
+            })
 
 # --- Plot Portfolio Performance ---
 # Convert to DataFrame
@@ -87,9 +88,9 @@ perf_df.set_index("date", inplace=True)
 cumulative_df = (1 + perf_df).cumprod()
 
 # Print final total returns
-print(f"1$ with pf_long has return: {cumulative_df['pf_long'].iloc[-1]-1:.2%}")
-print(f"1$ with pf_long_short has return: {cumulative_df['pf_long_short'].iloc[-1]-1:.2%}")
-print(f"1$ with factor mimicking has return: {cumulative_df['pf_mimicking'].iloc[-1]-1:.2%}")
+print(f"1$ with pf_long has return: {cumulative_df['pf_long'].iloc[-1]-1:.2%}") if DEBUG else None
+print(f"1$ with pf_long_short has return: {cumulative_df['pf_long_short'].iloc[-1]-1:.2%}") if DEBUG else None
+print(f"1$ with factor mimicking has return: {cumulative_df['pf_mimicking'].iloc[-1]-1:.2%}") if DEBUG else None
 
 # Resample to the same frequency as your portfolio rebalancing
 # sp500_resampled = sp500_df['Change %'].resample('15D').sum()  # sum of returns over 15D
