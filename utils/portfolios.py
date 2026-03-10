@@ -59,7 +59,6 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         if (target_date - nearest_date).days <= rebalancing:
             score = row["Composite_Score"]
             asset_return = row["Return"]
-            print(asset_return)
 
             timeframe_assets.append({
                 "asset": asset,
