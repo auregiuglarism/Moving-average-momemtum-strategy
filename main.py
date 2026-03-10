@@ -18,7 +18,7 @@ from portfolios import compute_portfolios_timeframe
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
-    data_folder = 'Data/Assets'
+    data_folder = 'Data/tests' 
     sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
     sp500_data = pd.read_csv(sp500_csv_path, parse_dates=['Date'], index_col='Date')
     sp500_data['Change %'] = (
@@ -92,16 +92,16 @@ print(f"1$ with pf_long_short has return: {cumulative_df['pf_long_short'].iloc[-
 print(f"1$ with factor mimicking has return: {cumulative_df['pf_mimicking'].iloc[-1]-1:.2%}")
 
 # Resample to the same frequency as your portfolio rebalancing
-sp500_resampled = sp500_df['Change %'].resample('15D').sum()  # sum of returns over 15D
-sp500_cumulative = (1 + sp500_resampled).cumprod()
-sp500_cumulative = sp500_cumulative.loc[cumulative_df.index]  # align with portfolio dates
+# sp500_resampled = sp500_df['Change %'].resample('15D').sum()  # sum of returns over 15D
+# sp500_cumulative = (1 + sp500_resampled).cumprod()
+# sp500_cumulative = sp500_cumulative.loc[cumulative_df.index]  # align with portfolio dates
 
 # Plot all three portfolios on the same graph + S&P 500 for comparison
 plt.figure(figsize=(12,6))
 plt.plot(cumulative_df.index, cumulative_df['pf_long'], label='Long Top 30')
 plt.plot(cumulative_df.index, cumulative_df['pf_long_short'], label='Long-Short Top/Bottom 30')
 plt.plot(cumulative_df.index, cumulative_df['pf_mimicking'], label='Factor Mimicking')
-plt.plot(sp500_cumulative.index, sp500_cumulative.values, label='S&P 500', linestyle='--', color='black')
+# plt.plot(sp500_cumulative.index, sp500_cumulative.values, label='S&P 500', linestyle='--', color='black')
 plt.title("Growth of $1 Invested in Each Portfolio")
 plt.xlabel("Date")
 plt.ylabel("Portfolio Value ($)")

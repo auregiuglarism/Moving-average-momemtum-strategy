@@ -38,21 +38,21 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         if asset.empty:
             continue
 
-        # find closest date in dataframe
-        nearest_idx = asset.index.get_indexer([target_date], method="nearest")
-        nearest_date = nearest_idx[0]
+        # find all dates <= target_date
+        past_dates = asset.index[asset.index <= target_date]
 
-        # if no valid date, continue (he maybe wasn't in the S&P 500 at that time)
-        if len(nearest_idx) == 0 or nearest_date == -1:
+        # skip if no past dates available
+        if past_dates.empty:
             continue
-        
-        row_date = asset.index[nearest_date]
 
-        # check if within ±7 days (weekly rebalancing) or +-15 days (monthly rebalancing)
-        if abs((row_date - target_date).days) <= rebalancing:
+        # get the most recent past date (closest backward)
+        nearest_date = past_dates[-1]
+        row = asset.loc[nearest_date]
 
-            score = asset.iloc[nearest_date]["Composite_Score"]
-            asset_return = asset.iloc[nearest_date]["Return"]
+        # check if within rebalancing days backward only
+        if (target_date - nearest_date).days <= rebalancing:
+            score = row["Composite_Score"]
+            asset_return = row["Return"]
 
             timeframe_assets.append({
                 "asset": asset,
