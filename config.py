@@ -16,7 +16,7 @@ ENABLE_LOGGING = True  # Enable rebalancing logging to CSV files
 
 dates = pd.date_range(
         start="2009-01-01",
-        end="2011-01-01",
+        end="2019-01-01",
         freq=f"{rebalancing_portfolios}D"   # Rebalancing
     )
 

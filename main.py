@@ -210,7 +210,7 @@ plt.suptitle("Growth of $1 Invested in Each Portfolio", fontsize=14)
 plt.title(f"Rebalancing {rebalancing_filter} | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
 plt.xlabel("Date")
 if rebalancing_filter == 'monthly': 
-    plt.yscale("log")
+    #plt.yscale("log")
     plt.ylabel("Portfolio Value($) - Log Scale")
 else:
     plt.ylabel("Portfolio Value($)")
