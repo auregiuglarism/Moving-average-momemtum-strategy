@@ -15,7 +15,7 @@ from utils.scoring import compute_scoring
 from utils.binary_gate import filter_stock_universe, prep_stock_universe
 from utils.portfolios import compute_portfolios_timeframe
 
-from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, weeks_per_year
+from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, smoothing
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         stock_universe, asset_data_dict = prep_stock_universe(data_folder)
         print("Stock universe:", len(stock_universe)) 
         asset_data_list = [asset_data_dict[ticker] for ticker in stock_universe]
-        scored_assets = compute_scoring(asset_data_list, sp500_df, advanced=advanced_scoring)
+        scored_assets = compute_scoring(asset_data_list, sp500_df, advanced=advanced_scoring, smoothing=smoothing)
     
     for i in range(len(dates)-1):
         start = dates[i]
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             print("Stock universe:", len(stock_universe))  
             # --- Step 2: Compute scoring for the filtered stock universe ---
             asset_data_list = [asset_data_dict[ticker] for ticker in stock_universe]
-            scored_assets = compute_scoring(asset_data_list, sp500_df, advanced=advanced_scoring)
+            scored_assets = compute_scoring(asset_data_list, sp500_df, advanced=advanced_scoring, smoothing=smoothing)
 
         # --- Step 3: We can compute portfolios and their returns ---
         pf_long, pf_long_short, pf_mimicking, r_long, r_ls, r_mim = compute_portfolios_timeframe(
@@ -141,13 +141,9 @@ plt.plot(cumulative_df.index, cumulative_df['pf_mimicking'], label='Factor Mimic
 plt.plot(cumulative_df.index, sp500_cumulative_aligned, label='S&P 500', linestyle='--', color='black')
 
 plt.suptitle("Growth of $1 Invested in Each Portfolio", fontsize=14)
-plt.title(f"Rebalancing {rebalancing_filter} | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
+plt.title(f"Rebalancing Monthly | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
 plt.xlabel("Date")
-if rebalancing_filter == 'monthly': 
-    plt.yscale("log")
-    plt.ylabel("Portfolio Value($) - Log Scale")
-else:
-    plt.ylabel("Portfolio Value($)")
+plt.ylabel("Portfolio Value($)")    
 plt.legend()
 plt.grid(True)
 plt.show()

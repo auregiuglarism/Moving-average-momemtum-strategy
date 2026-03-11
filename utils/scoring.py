@@ -15,21 +15,21 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
 
     # Weekly relative strength score
     if smoothing:
-        asset_data = asset_data.resample('W').mean()
-        sp500_data = sp500_data.resample('W').mean()
+        asset_data = asset_data.resample('M').mean()
+        sp500_data = sp500_data.resample('M').mean()
     else:
-        asset_data = asset_data.resample('W').last()
-        sp500_data = sp500_data.resample('W').last()
+        asset_data = asset_data.resample('M').last()
+        sp500_data = sp500_data.resample('M').last()
     asset_data = asset_data.join(sp500_data['Change %'], how='inner') # SP500 return
     # positive = outperformed S&P 500, negative = underperformed S&P 500
     asset_data['RS_Score'] = asset_data['Return'] - asset_data['Change %'] 
 
     if advanced:
         # 12-month momentum score
-        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=52) # 52 weeks in a year
+        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=12) # 12 months in a year
 
         # Realized volatility (21 trading days in a month)
-        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=4).std() # 4 weeks in a month
+        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=12).std() # 12 months in a year
     
     return asset_data
 
@@ -63,12 +63,12 @@ def create_final_composite_score(asset_data, advanced, weights):
     return asset_data
     
 # --- Main function to run the scoring process ---
-def compute_scoring(asset_data_list, sp500_df, advanced=False):
+def compute_scoring(asset_data_list, sp500_df, advanced=False, smoothing=False):
     weights = [0.5, 0.5] if not advanced else [0.3, 0.3, 0.2, 0.2]
     
     for i, asset_df in enumerate(asset_data_list):
         asset_df = asset_df.sort_index()  # Ensure data is sorted by date
-        asset_df = calculate_raw_scores(asset_df, sp500_df, advanced=advanced, smoothing=False)
+        asset_df = calculate_raw_scores(asset_df, sp500_df, advanced=advanced, smoothing=smoothing)
         asset_df.dropna(inplace=True)
         asset_df = normalize_scores_cross_sectional(asset_df, advanced=advanced)
         if advanced:
