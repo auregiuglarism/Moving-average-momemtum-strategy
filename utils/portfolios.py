@@ -22,7 +22,7 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
     next_timeframe : str
         Target date for measuring returns (next rebalance date).
     rebalancing : int
-        Number of days for rebalancing window (e.g., 7 for weekly, 30 for monthly).
+        Number of days for rebalancing window (30 for monthly).
 
     Returns
     -------

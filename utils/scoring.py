@@ -46,10 +46,10 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
 
     if advanced:
         # 12-month momentum score
-        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=52) # 52 weeks in a year
+        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=12) # 12 months in a year
 
         # Realized volatility (21 trading days in a month)
-        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=4).std() # 4 weeks in a month
+        asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=12).std() # 12 months in a year
     
     return asset_data
 
@@ -150,7 +150,7 @@ def create_final_composite_score(asset_data, advanced, weights):
     return asset_data
     
 # --- Main function to run the scoring process ---
-def compute_scoring(asset_data_list, sp500_df, advanced=False):
+def compute_scoring(asset_data_list, sp500_df, advanced=False, smoothing=False):
     weights = [0.5, 0.5] if not advanced else [0.3, 0.3, 0.2, 0.2]
 
     print(f"\nComputing scores for {len(asset_data_list)} assets...")
@@ -161,7 +161,7 @@ def compute_scoring(asset_data_list, sp500_df, advanced=False):
         if i % max(1, len(asset_data_list) // 5) == 0:
             print(f"  Processed {i}/{len(asset_data_list)} assets...")
         asset_df = asset_df.sort_index()  # Ensure data is sorted by date
-        asset_df = calculate_raw_scores(asset_df, sp500_df, advanced=advanced, smoothing=False)
+        asset_df = calculate_raw_scores(asset_df, sp500_df, advanced=advanced, smoothing=smoothing)
         asset_df.dropna(inplace=True)
         asset_data_list[i] = asset_df
 
