@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from utils.scoring import compute_scoring
 from utils.binary_gate import filter_stock_universe, prep_stock_universe
 from utils.portfolios import compute_portfolios_timeframe
+from utils.risk import compute_betas, estimate_factor_risk_premium, test_factor_pricing
 
 from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, smoothing
 
