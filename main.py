@@ -13,10 +13,12 @@ import matplotlib.pyplot as plt
 
 from utils.scoring import compute_scoring
 from utils.binary_gate import filter_stock_universe, prep_stock_universe
-from utils.portfolios import compute_portfolios_timeframe
-from utils.risk import compute_betas, estimate_factor_risk_premium, test_factor_pricing
+from utils.portfolios import compute_portfolios_timeframe, build_portfolio_composition_dict
+from utils.logging_rebalance import RebalancingLogger
+from utils.portfolio_tracker import PortfolioTracker
+from utils.data_validation import filter_clean_universe
 
-from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, smoothing
+from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, weeks_per_year, ENABLE_LOGGING
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
@@ -31,15 +33,48 @@ if __name__ == "__main__":
     sp500_df = sp500_data.sort_index()
     sp500df_copy = sp500_df.copy() # we need an unprocessed copy for later.
 
+    # Initialize logging if enabled
+    logger = RebalancingLogger(log_dir='Logs') if ENABLE_LOGGING else None
+    tracker = PortfolioTracker() if ENABLE_LOGGING else None
+
     portfolio_long_value = start_value
     portfolio_ls_value = start_value
     portfolio_mim_value = start_value
     portfolio_values = []  # will store dicts with date + 3 values
+    previous_portfolio_value = start_value
+
+    # --- Step 0b: Filter corrupted stocks ---
+    print("\n" + "=" * 80)
+    print("FILTERING CORRUPTED STOCKS (reverse splits, delisted, etc.)")
+    print("=" * 80)
+    if not DEBUG_MAIN:
+        clean_tickers, removed_tickers = filter_clean_universe(
+            data_folder,
+            max_daily_move=0.3,      # Max 30% daily move
+            max_monthly_return=0.5   # Max 50% monthly return
+        )
+        print(f"\n✅ Filtering complete:")
+        print(f"   Clean tickers: {len(clean_tickers)}")
+        print(f"   Removed (corrupted): {len(removed_tickers)}")
+        if len(removed_tickers) > 0 and len(removed_tickers) <= 20:
+            print(f"   Removed tickers: {sorted(removed_tickers)}")
+        elif len(removed_tickers) > 20:
+            print(f"   Removed tickers: {sorted(removed_tickers)[:15]}... and {len(removed_tickers)-15} more")
+    else:
+        clean_tickers = None  # Not used in debug mode
 
     # Only apply scoring once since no binary gate
     if binary_gate == False:
         stock_universe, asset_data_dict = prep_stock_universe(data_folder)
-        print("Stock universe:", len(stock_universe)) 
+
+        # Filter to clean tickers only
+        if not DEBUG_MAIN and clean_tickers is not None:
+            original_size = len(stock_universe)
+            stock_universe = [t for t in stock_universe if t in clean_tickers]
+            asset_data_dict = {t: asset_data_dict[t] for t in stock_universe}
+            print(f"\nStock universe after filtering: {len(stock_universe)} (was {original_size})")
+
+        print(f"\nStock universe: {len(stock_universe)}") 
         asset_data_list = [asset_data_dict[ticker] for ticker in stock_universe]
         scored_assets = compute_scoring(asset_data_list, sp500_df, advanced=advanced_scoring, smoothing=smoothing)
     
@@ -56,10 +91,11 @@ if __name__ == "__main__":
             scored_assets = compute_scoring(asset_data_list, sp500_df, advanced=advanced_scoring, smoothing=smoothing)
 
         # --- Step 3: We can compute portfolios and their returns ---
-        pf_long, pf_long_short, pf_mimicking, r_long, r_ls, r_mim = compute_portfolios_timeframe(
+        pf_long, pf_long_short, pf_mimicking, r_long, r_ls, r_mim, portfolio_info = compute_portfolios_timeframe(
             scored_assets,
             top_n=30,
             timeframe=start,
+            next_timeframe=end,
             rebalancing=rebalancing_portfolios,
             equal_weights=equal_weights
         )
@@ -71,6 +107,7 @@ if __name__ == "__main__":
             if abs(r_ls) > 1 and DEBUG_MAIN_ABNORMAL:
                 print("WARNING abnormal return long-short:", r_ls)
             if abs(r_mim) > 1 and DEBUG_MAIN_ABNORMAL:
+
                 print("WARNING abnormal return mimicking:", r_mim)
 
             print(f"Average weekly return (top 30): {r_long:.2%}") if DEBUG_MAIN_ABNORMAL else None
@@ -84,6 +121,29 @@ if __name__ == "__main__":
             print(f"Cumulative pf_long: {portfolio_long_value:.2f}x") if DEBUG_MAIN_ABNORMAL else None
             print(f"Cumulative pf_long_short: {portfolio_ls_value:.2f}x") if DEBUG_MAIN_ABNORMAL else None
             print(f"Cumulative pf_mimicking: {portfolio_mim_value:.2f}x") if DEBUG_MAIN_ABNORMAL else None
+
+            # --- Logging: Record rebalancing event if enabled ---
+            if ENABLE_LOGGING:
+                composition = build_portfolio_composition_dict(portfolio_info, scored_assets, stock_universe)
+                cumulative_return = (portfolio_long_value / start_value) - 1
+                bought_tickers, bought_scores, sold_tickers, sold_scores = tracker.get_buys_and_sells(composition)
+
+                logger.log_rebalancing_event(
+                    date=start,
+                    period_return=r_long,
+                    cumulative_return=cumulative_return,
+                    portfolio_value=portfolio_long_value,
+                    previous_portfolio_value=previous_portfolio_value,
+                    bought_tickers=bought_tickers,
+                    bought_scores=bought_scores,
+                    sold_tickers=sold_tickers,
+                    sold_scores=sold_scores,
+                    portfolio_composition=composition,
+                    equal_weights=equal_weights
+                )
+
+                previous_portfolio_value = portfolio_long_value
+                tracker.previous_composition = composition
 
             portfolio_values.append({
                 "date": end,
@@ -134,6 +194,11 @@ print(f"Annualized return pf_long_short: {cagr_ls:.2%}")
 print(f"Annualized return pf_mimicking: {cagr_mim:.2%}")
 print(f"Annualized return S&P 500: {cagr_sp500:.2%}")
 
+# --- Save logs if enabled ---
+if ENABLE_LOGGING:
+    logger.save_logs()
+    print("\nRebalancing logs saved to Logs/ directory")
+
 # Plot all three portfolios on the same graph + S&P 500 for comparison
 plt.figure(figsize=(12,6))
 plt.plot(cumulative_df.index, cumulative_df['pf_long'], label='Long Top 30')
@@ -144,7 +209,11 @@ plt.plot(cumulative_df.index, sp500_cumulative_aligned, label='S&P 500', linesty
 plt.suptitle("Growth of $1 Invested in Each Portfolio", fontsize=14)
 plt.title(f"Rebalancing Monthly | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
 plt.xlabel("Date")
-plt.ylabel("Portfolio Value($)")    
+if rebalancing_filter == 'monthly': 
+    #plt.yscale("log")
+    plt.ylabel("Portfolio Value($) - Log Scale")
+else:
+    plt.ylabel("Portfolio Value($)")
 plt.legend()
 plt.grid(True)
 plt.show()
