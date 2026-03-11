@@ -1,10 +1,10 @@
 import pandas as pd
 
 # portfolios.py config
-DEBUG_PORTFOLIOS=False
+DEBUG_PORTFOLIOS=True
 
 # main.py config
-DEBUG_MAIN=False
+DEBUG_MAIN=True
 DEBUG_MAIN_ABNORMAL=False
 
 binary_gate=False

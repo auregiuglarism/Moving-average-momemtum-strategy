@@ -15,11 +15,11 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
 
     # Weekly relative strength score
     if smoothing:
-        asset_data = asset_data.resample('M').mean()
-        sp500_data = sp500_data.resample('M').mean()
+        asset_data = asset_data.resample('ME').mean(numeric_only=True) # Resample to monthly frequency, taking mean of returns and scores
+        sp500_data = sp500_data.resample('ME').mean(numeric_only=True) # Resample to monthly frequency, taking mean of returns and scores
     else:
-        asset_data = asset_data.resample('M').last()
-        sp500_data = sp500_data.resample('M').last()
+        asset_data = asset_data.resample('ME').last()
+        sp500_data = sp500_data.resample('ME').last()
     asset_data = asset_data.join(sp500_data['Change %'], how='inner') # SP500 return
     # positive = outperformed S&P 500, negative = underperformed S&P 500
     asset_data['RS_Score'] = asset_data['Return'] - asset_data['Change %'] 
