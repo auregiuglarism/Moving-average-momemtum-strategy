@@ -74,7 +74,7 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         tf_df = tf_df.sort_values("score", ascending=False)
 
         n_assets = len(tf_df)
-        top_n = min(top_n, n_assets // 2)  # Ensure we have enough assets for both top and bottom portfolios
+        top_n = min(top_n, max(1, int(n_assets * 0.3)))  # 30% of universe
 
         top_assets = tf_df.head(top_n)
         bottom_assets = tf_df.tail(top_n)
