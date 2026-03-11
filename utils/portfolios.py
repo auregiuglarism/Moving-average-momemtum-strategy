@@ -4,8 +4,7 @@ based on the composite scores of the assets that passed the binary gate.
 """
 
 import pandas as pd
-
-DEBUG = False
+from config import DEBUG_PORTFOLIOS
 
 def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', rebalancing=7, equal_weights=True):
     """
@@ -38,17 +37,18 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
     for asset in scored_assets:
         # skip if the asset has no rows go to next asset
         if asset.empty:
+            print("HIT, asset empty") if DEBUG_PORTFOLIOS else None
             continue
 
         start_date = target_date - pd.Timedelta(days=rebalancing)
 
         # find start_date <= all dates <= target_date
         past_dates = asset.index[(asset.index >= start_date) & (asset.index <= target_date)]
-        print(f"Asset has {len(past_dates)} past dates before {target_date.strftime('%Y-%m-%d')}.") if DEBUG else None
+        print(f"Asset has {len(past_dates)} past dates before {target_date.strftime('%Y-%m-%d')}.") if DEBUG_PORTFOLIOS else None
 
         # skip if no past dates available go to next asset
         if past_dates.empty:
-            print("HIT, no past dates available") if DEBUG else None
+            print("HIT, no past dates available") if DEBUG_PORTFOLIOS else None
             continue
 
         # get the most recent past date (closest backward)
@@ -73,8 +73,14 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         # --- Step 2: ranking ---
         tf_df = tf_df.sort_values("score", ascending=False)
 
+        n_assets = len(tf_df)
+        top_n = min(top_n, n_assets // 2)  # Ensure we have enough assets for both top and bottom portfolios
+
         top_assets = tf_df.head(top_n)
         bottom_assets = tf_df.tail(top_n)
+
+        print("Top returns:", top_assets["return"].head()) if DEBUG_PORTFOLIOS else None
+        print("Bottom returns:", bottom_assets["return"].head()) if DEBUG_PORTFOLIOS else None      
 
         # --- Portfolio 1: Long Top 30 ---
         pf_long = list(top_assets["asset"])
@@ -115,7 +121,7 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
 
         return pf_long, pf_long_short, pf_mimicking, pf_long_returns, pf_long_short_returns, pf_mimicking_returns
     else:
-        print("No assets found for that timeframe. Going to the next timeframe.") if DEBUG else None
+        print("No assets found for that timeframe. Going to the next timeframe.") if DEBUG_PORTFOLIOS else None
         return None, None, None, None, None, None
 
 
