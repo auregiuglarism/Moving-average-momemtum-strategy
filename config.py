@@ -12,6 +12,7 @@ rebalancing_filter = 'monthly'
 rebalancing_portfolios = 30 
 advanced_scoring = False
 equal_weights=True
+smoothing=False
 ENABLE_LOGGING = True  # Enable rebalancing logging to CSV files
 
 dates = pd.date_range(

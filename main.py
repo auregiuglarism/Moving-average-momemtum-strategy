@@ -18,7 +18,7 @@ from utils.logging_rebalance import RebalancingLogger
 from utils.portfolio_tracker import PortfolioTracker
 from utils.data_validation import filter_clean_universe
 
-from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, weeks_per_year, ENABLE_LOGGING
+from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, ENABLE_LOGGING, smoothing
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     sp500df_copy = sp500_df.copy() # we need an unprocessed copy for later.
 
     # Initialize logging if enabled
-    logger = RebalancingLogger(log_dir='Logs') if ENABLE_LOGGING else None
+    logger = RebalancingLogger(log_dir='logs') if ENABLE_LOGGING else None
     tracker = PortfolioTracker() if ENABLE_LOGGING else None
 
     portfolio_long_value = start_value
