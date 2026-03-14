@@ -4,7 +4,7 @@ Analyze data quality issues in the asset files
 import pandas as pd
 import os
 
-data_folder = 'Data/Assets'
+data_folder = 'data/stocks'
 
 print("=" * 80)
 print("DATA QUALITY ANALYSIS")
@@ -25,7 +25,7 @@ for filename in sorted(os.listdir(data_folder)):
                 continue
 
             # Check for extreme monthly returns
-            prices_monthly = asset_df['price'].resample('ME').last()
+            prices_monthly = asset_df['Close'].resample('ME').last()
             monthly_return = prices_monthly.pct_change()
 
             max_ret = monthly_return.max()
@@ -35,7 +35,7 @@ for filename in sorted(os.listdir(data_folder)):
                 extreme_returns.append((ticker, max_ret, min_ret))
 
             # Check for data gaps
-            daily_returns = asset_df['price'].pct_change()
+            daily_returns = asset_df['Close'].pct_change()
             huge_gaps = daily_returns[abs(daily_returns) > 0.5]
             if len(huge_gaps) > 0:
                 data_gaps.append((ticker, len(huge_gaps)))

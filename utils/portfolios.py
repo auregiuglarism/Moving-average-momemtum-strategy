@@ -6,7 +6,7 @@ based on the composite scores of the assets that passed the binary gate.
 import pandas as pd
 from config import DEBUG_PORTFOLIOS
 
-def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01', next_timeframe=None, rebalancing=7, equal_weights=True):
+def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2020-01-01', next_timeframe=None, rebalancing=30, equal_weights=True):
     """
     Build three portfolios at a given timeframe, measuring returns to the next timeframe.
 
@@ -61,7 +61,7 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
         # check if within rebalancing days backward only
         if (target_date - decision_date).days <= rebalancing:
             score = row["Composite_Score"]
-            price_at_decision = row["price"]
+            price_at_decision = row["Close"]
 
             # Calculate actual forward return from decision date to next timeframe
             asset_return = None
@@ -70,7 +70,7 @@ def compute_portfolios_timeframe(scored_assets, top_n=30, timeframe='2009-01-01'
                 future_dates = asset.index[asset.index >= next_date]
                 if len(future_dates) > 0:
                     measurement_date = future_dates[0]
-                    price_at_measurement = asset.loc[measurement_date, "price"]
+                    price_at_measurement = asset.loc[measurement_date, "Close"]
                     # Calculate return: (price_end - price_start) / price_start
                     asset_return = (price_at_measurement - price_at_decision) / price_at_decision
             else:

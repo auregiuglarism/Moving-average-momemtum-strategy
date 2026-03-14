@@ -22,8 +22,8 @@ from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalanc
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
-    data_folder = 'Data/tests' if DEBUG_MAIN else 'Data/Assets'
-    sp500_csv_path = 'Data/S&P 500 Historical Data.csv'
+    data_folder = 'data/tests' if DEBUG_MAIN else 'data/stocks'
+    sp500_csv_path = 'data/sp500_historical.csv'
     sp500_data = pd.read_csv(sp500_csv_path, parse_dates=['Date'], index_col='Date')
     sp500_data['Change %'] = (
         sp500_data['Change %']
@@ -209,11 +209,7 @@ plt.plot(cumulative_df.index, sp500_cumulative_aligned, label='S&P 500', linesty
 plt.suptitle("Growth of $1 Invested in Each Portfolio", fontsize=14)
 plt.title(f"Rebalancing Monthly | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
 plt.xlabel("Date")
-if rebalancing_filter == 'monthly': 
-    #plt.yscale("log")
-    plt.ylabel("Portfolio Value($) - Log Scale")
-else:
-    plt.ylabel("Portfolio Value($)")
+plt.ylabel("Portfolio Value($)")
 plt.legend()
 plt.grid(True)
 plt.show()

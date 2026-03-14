@@ -5,11 +5,11 @@ import pandas as pd
 import json
 
 # Load the rebalancing log
-with open('Logs/rebalancing_log.json', 'r') as f:
+with open('logs/rebalancing_log.json', 'r') as f:
     log = json.load(f)
 
 # Load the CSV log for easier viewing
-csv_log = pd.read_csv('Logs/rebalancing_log.csv')
+csv_log = pd.read_csv('logs/rebalancing_log.csv')
 
 print("=" * 80)
 print("ANOMALY DETECTION: Returns and Score Issues")
@@ -28,11 +28,11 @@ print("EXTREME SCORES DETECTED IN 2010:")
 print("=" * 80)
 
 # Load the 2010 asset scores
-assets_20100327 = pd.read_csv('Logs/assets_scores_20100327.csv')
+assets_20100327 = pd.read_csv('logs/assets_scores_20100327.csv')
 print("\n2010-03-27 Asset Scores (Top 10):")
 print(assets_20100327.head(10).to_string(index=False))
 
-assets_20100126 = pd.read_csv('Logs/assets_scores_20100126.csv')
+assets_20100126 = pd.read_csv('logs/assets_scores_20100126.csv')
 print("\n2010-01-26 Asset Scores (Top 10):")
 print(assets_20100126.head(10).to_string(index=False))
 
@@ -65,7 +65,7 @@ print("=" * 80)
 
 # Check for any NaN or inf values in the normalization
 print("\nChecking 2010-03-27 scores for data quality issues...")
-with open('Logs/assets_scores_20100327.csv', 'r') as f:
+with open('logs/assets_scores_20100327.csv', 'r') as f:
     content = f.read()
     if 'inf' in content.lower() or 'nan' in content.lower():
         print("FOUND NaN or Inf values!")

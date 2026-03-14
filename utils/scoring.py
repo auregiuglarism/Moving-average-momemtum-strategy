@@ -6,20 +6,20 @@ import pandas as pd
 # --- Calculate Raw 200 Day Moving Average Score (Normal Scoring) ---
 def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False):
     # Mandatory return computation
-    asset_data['Return'] = asset_data['price'].pct_change()
+    asset_data['Return'] = float(asset_data['Close']).pct_change()
    
     # 200-day moving average score
     window = 200
-    asset_data['MA'] = asset_data['price'].rolling(window=window).mean()
-    asset_data['MA_Score'] = (asset_data['price'] - asset_data['MA']) / asset_data['MA']
+    asset_data['MA'] = asset_data['Close'].rolling(window=window).mean()
+    asset_data['MA_Score'] = (asset_data['Close'] - asset_data['MA']) / asset_data['MA']
 
     # Weekly relative strength score
     # IMPORTANT: Calculate weekly returns correctly from prices, not from daily returns
     if smoothing:
-        asset_prices_weekly = asset_data['price'].resample('ME').mean()
+        asset_prices_weekly = asset_data['Close'].resample('ME').mean()
         sp500_resampled = sp500_data.resample('ME').mean()
     else:
-        asset_prices_weekly = asset_data['price'].resample('ME').last()
+        asset_prices_weekly = asset_data['Close'].resample('ME').last()
         sp500_resampled = sp500_data.resample('ME').last()
 
     # Calculate weekly returns from weekly prices (cumulative return for the week)
@@ -27,7 +27,7 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
 
     # Build weekly dataframe with matching indices
     asset_data = pd.DataFrame({
-        'price': asset_prices_weekly,
+        'Close': asset_prices_weekly,
         'Return': weekly_return,
         'MA': asset_data['MA'].resample('ME').last(),
         'MA_Score': asset_data['MA_Score'].resample('ME').last(),
@@ -36,7 +36,7 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
 
     # Add advanced scores if present
     if advanced:
-        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=12)
+        asset_data['MMTM_Score'] = asset_data['Close'].pct_change(periods=12)
         asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=12).std()
 
     asset_data = asset_data.dropna()
@@ -46,7 +46,7 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
 
     if advanced:
         # 12-month momentum score
-        asset_data['MMTM_Score'] = asset_data['price'].pct_change(periods=12) # 12 months in a year
+        asset_data['MMTM_Score'] = asset_data['Close'].pct_change(periods=12) # 12 months in a year
 
         # Realized volatility (21 trading days in a month)
         asset_data['REA_Volatility'] = asset_data['Return'].rolling(window=12).std() # 12 months in a year
@@ -182,8 +182,12 @@ def compute_scoring(asset_data_list, sp500_df, advanced=False, smoothing=False):
 
 # Uncomment to test
 if __name__ == "__main__":
-    asset = pd.read_csv('Data/Assets/yfinance_A.csv', parse_dates=['date'], index_col='date')
-    sp500 = pd.read_csv('Data/S&P 500 Historical Data.csv', parse_dates=['Date'], index_col='Date')
+    asset = pd.read_csv("data/stocks/A.csv")
+    asset = asset.iloc[2:]
+    asset.rename(columns={"Price": "Date"}, inplace=True)
+    asset["Date"] = pd.to_datetime(asset["Date"])
+    print(asset.head())
+    sp500 = pd.read_csv('data/sp500_historical.csv', parse_dates=['Date'], index_col='Date')
     sp500['Change %'] = (
         sp500['Change %']
         .str.replace('%', '', regex=False)
