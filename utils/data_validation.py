@@ -72,9 +72,12 @@ def filter_clean_universe(data_folder, max_daily_move=0.3, max_monthly_return=0.
             try:
                 asset_df = pd.read_csv(
                     os.path.join(data_folder, filename),
-                    parse_dates=['date'],
-                    index_col='date'
                 )
+                asset_df = asset_df.iloc[2:]
+                asset_df.rename(columns={"Price": "Date"}, inplace=True)
+                asset_df["Date"] = pd.to_datetime(asset_df["Date"])
+                asset_df.set_index("Date", inplace=True)
+                asset_df = asset_df.astype(float)
                 asset_df = asset_df.sort_index()
 
                 if validate_asset_data(asset_df, ticker, max_daily_move, max_monthly_return):

@@ -86,7 +86,12 @@ def filter_stock_universe(data_folder, sp500_csv_path, rebalancing='monthly', ti
             ticker = filename.replace('yfinance_', '').replace('.csv', '')
             print(f"Processing {ticker}...")
             asset_path = os.path.join(data_folder, filename)
-            asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
+            asset_data = pd.read_csv(asset_path)
+            asset_data = asset_data.iloc[2:]
+            asset_data.rename(columns={"Price": "Date"}, inplace=True)
+            asset_data["Date"] = pd.to_datetime(asset_data["Date"])
+            asset_data.set_index("Date", inplace=True)
+            asset_data = asset_data.astype(float)
             asset_data_temp = asset_data.copy()
             asset_data_temp.sort_index()
 
@@ -142,7 +147,12 @@ def prep_stock_universe(data_folder):
             stock_universe.append(ticker)
 
             asset_path = os.path.join(data_folder, filename)
-            asset_data = pd.read_csv(asset_path, parse_dates=['date'], index_col='date')
+            asset_data = pd.read_csv(asset_path)
+            asset_data = asset_data.iloc[2:]
+            asset_data.rename(columns={"Price": "Date"}, inplace=True)
+            asset_data["Date"] = pd.to_datetime(asset_data["Date"])
+            asset_data.set_index("Date", inplace=True)
+            asset_data = asset_data.astype(float)
             asset_data_dict[ticker] = asset_data.copy()
 
     return stock_universe, asset_data_dict
