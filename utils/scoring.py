@@ -94,11 +94,11 @@ def normalize_scores_cross_sectional(asset_data_list, advanced=False):
         mask = all_data_normalized['_asset_idx'] == i
         normalized_df = all_data_normalized[mask].copy()
 
-        # Add normalized columns back to original dataframe
+        # Add normalized columns back to original dataframe (with explicit index alignment)
         for factor in factor_list:
             norm_col = factor + '_Norm'
             if norm_col in normalized_df.columns:
-                asset_df[norm_col] = normalized_df[norm_col]
+                asset_df[norm_col] = normalized_df[norm_col].reindex(asset_df.index)
 
         # Remove temporary column
         if '_asset_idx' in asset_df.columns:
@@ -163,26 +163,55 @@ def compute_scoring(asset_data_list, sp500_df, advanced=False, smoothing=False):
 
 # Uncomment to test
 if __name__ == "__main__":
-    asset = pd.read_csv("data/stocks/A.csv")
-    asset = asset.iloc[2:]
-    asset.rename(columns={"Price": "Date"}, inplace=True)
-    asset["Date"] = pd.to_datetime(asset["Date"])
-    asset.set_index("Date", inplace=True)
-    asset = asset.astype(float)
-    sp500 = pd.read_csv('data/sp500_historical.csv', parse_dates=['Date'], index_col='Date')
+    import os
+    import glob
+
+    # Get paths relative to this script file
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_dir = os.path.dirname(script_dir)
+
+    # Load multiple assets (needed for proper cross-sectional normalization)
+    stock_files = glob.glob(os.path.join(project_dir, "data/stocks/*.csv"))[:5]  # Load first 5 stocks
+    asset_list = []
+
+    for stock_file in stock_files:
+        asset = pd.read_csv(stock_file)
+        asset = asset.iloc[2:]
+        asset.rename(columns={"Price": "Date"}, inplace=True)
+        asset["Date"] = pd.to_datetime(asset["Date"])
+        asset.set_index("Date", inplace=True)
+        asset = asset.astype(float)
+        asset_list.append(asset.sort_index())
+
+    sp500 = pd.read_csv(os.path.join(project_dir, 'data/sp500_historical.csv'), parse_dates=['Date'], index_col='Date')
     sp500['Change %'] = (
         sp500['Change %']
         .str.replace('%', '', regex=False)
         .astype(float) / 100
     )
-    asset = asset.sort_index()
     sp500 = sp500.sort_index()
-    scored_asset = calculate_raw_scores(asset, sp500, advanced=True, smoothing=False)
-    scored_asset.dropna(inplace=True)
-    # Now normalize_scores_cross_sectional expects a list
-    scored_list = normalize_scores_cross_sectional([scored_asset], advanced=True)
-    scored_asset = scored_list[0]
-    winsorized_asset = winsorize_scores(scored_asset)
-    final_scored_asset = create_final_composite_score(winsorized_asset, advanced=True, weights=[0.3, 0.3, 0.2, 0.2])
-    print(final_scored_asset.head())
+
+    # Score all assets
+    print(f"Testing with {len(asset_list)} assets...\n")
+    scored_assets = []
+    for i, asset in enumerate(asset_list):
+        scored_asset = calculate_raw_scores(asset, sp500, advanced=True, smoothing=False)
+        scored_asset.dropna(inplace=True)
+        scored_assets.append(scored_asset)
+
+    # Normalize across the universe
+    scored_list = normalize_scores_cross_sectional(scored_assets, advanced=True)
+
+    # Show results from first asset
+    first_asset = scored_list[0]
+    print("Columns after normalization:", first_asset.columns.tolist())
+    print("\nSample normalized scores (first asset):\n", first_asset[['MA_Score_Norm', 'RS_Score_Norm']].head() if 'MA_Score_Norm' in first_asset.columns else "No normalized columns found")
+
+    # Create composite scores
+    for i, asset_df in enumerate(scored_list):
+        asset_df = winsorize_scores(asset_df)
+        asset_df = create_final_composite_score(asset_df, advanced=True, weights=[0.3, 0.3, 0.2, 0.2])
+        scored_list[i] = asset_df
+
+    print("\nFinal composite scores (first asset):\n", scored_list[0][['Composite_Score']].head())
 
