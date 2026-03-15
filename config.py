@@ -1,23 +1,23 @@
 import pandas as pd
 
 # portfolios.py config
-DEBUG_PORTFOLIOS=True
+DEBUG_PORTFOLIOS=False
 
 # main.py config
-DEBUG_MAIN=True
+DEBUG_MAIN=False
 DEBUG_MAIN_ABNORMAL=False
 
 binary_gate=False
 rebalancing_filter = 'monthly' 
 rebalancing_portfolios = 30 
-advanced_scoring = False
-equal_weights=True
-smoothing=False
-ENABLE_LOGGING = True  # Enable rebalancing logging to CSV files
+advanced_scoring = True
+equal_weights=False
+smoothing=True
+ENABLE_LOGGING = False  # Enable rebalancing logging to CSV files
 
 dates = pd.date_range(
-        start="2009-01-01",
-        end="2019-01-01",
+        start="2020-01-01",
+        end="2026-01-01",
         freq=f"{rebalancing_portfolios}D"   # Rebalancing
     )
 

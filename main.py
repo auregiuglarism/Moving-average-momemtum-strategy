@@ -44,10 +44,10 @@ if __name__ == "__main__":
     previous_portfolio_value = start_value
 
     # --- Step 0b: Filter corrupted stocks ---
-    print("\n" + "=" * 80)
-    print("FILTERING CORRUPTED STOCKS (reverse splits, delisted, etc.)")
-    print("=" * 80)
     if not DEBUG_MAIN:
+        print("\n" + "=" * 80)
+        print("FILTERING CORRUPTED STOCKS (reverse splits, delisted, etc.)")
+        print("=" * 80)
         clean_tickers, removed_tickers = filter_clean_universe(
             data_folder,
             max_daily_move=0.3,      # Max 30% daily move
@@ -146,7 +146,7 @@ if __name__ == "__main__":
                 tracker.previous_composition = composition
 
             portfolio_values.append({
-                "date": end,
+                "Date": end,
                 "pf_long": portfolio_long_value,
                 "pf_long_short": portfolio_ls_value,
                 "pf_mimicking": portfolio_mim_value
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 # --- Plot Portfolio Performance ---
 # Convert to DataFrame
 perf_df = pd.DataFrame(portfolio_values)
-perf_df.set_index("date", inplace=True)
+perf_df.set_index("Date", inplace=True)
 
 # Cumulative returns
 cumulative_df = perf_df

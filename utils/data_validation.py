@@ -28,7 +28,7 @@ def validate_asset_data(asset_df, ticker, max_daily_move=0.3, max_monthly_return
     if len(asset_df) < 100:
         return False  # Too little data
 
-    daily_return = asset_df['price'].pct_change()
+    daily_return = asset_df['Close'].pct_change()
 
     # Check for unrealistic daily moves (likely data errors or bankruptcies)
     extreme_daily = daily_return[abs(daily_return) > max_daily_move]
@@ -36,7 +36,7 @@ def validate_asset_data(asset_df, ticker, max_daily_move=0.3, max_monthly_return
         return False
 
     # Check for unrealistic monthly returns
-    prices_monthly = asset_df['price'].resample('ME').last()
+    prices_monthly = asset_df['Close'].resample('ME').last()
     monthly_return = prices_monthly.pct_change()
     extreme_monthly = monthly_return[abs(monthly_return) > max_monthly_return]
     if len(extreme_monthly) > 2:  # Allow one or two, but not many
@@ -68,7 +68,7 @@ def filter_clean_universe(data_folder, max_daily_move=0.3, max_monthly_return=0.
 
     for filename in os.listdir(data_folder):
         if filename.endswith('.csv'):
-            ticker = filename.replace('yfinance_', '').replace('.csv', '')
+            ticker = filename.replace('.csv', '')
             try:
                 asset_df = pd.read_csv(
                     os.path.join(data_folder, filename),
@@ -117,14 +117,14 @@ def clean_asset_returns(asset_df, max_daily_move=0.3, max_monthly_return=0.5):
         Asset dataframe with capped returns
     """
     # Cap daily moves
-    daily_return = asset_df['price'].pct_change()
-    asset_df['price'] = asset_df['price'].copy()
+    daily_return = asset_df['Close'].pct_change()
+    asset_df['Close'] = asset_df['Close'].copy()
 
     # Clip extreme daily changes by reconstructing prices
     mask = abs(daily_return) > max_daily_move
     if mask.any():
         capped_return = daily_return.clip(-max_daily_move, max_daily_move)
         # Reconstruct prices from capped returns
-        asset_df.loc[mask, 'price'] = asset_df.loc[mask.shift(1), 'price'].values * (1 + capped_return[mask].values)
+        asset_df.loc[mask, 'Close'] = asset_df.loc[mask.shift(1), 'Close'].values * (1 + capped_return[mask].values)
 
     return asset_df
