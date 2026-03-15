@@ -17,7 +17,7 @@ def calculate_raw_scores(asset_data, sp500_data, advanced=False, smoothing=False
     # IMPORTANT: Calculate weekly returns correctly from prices, not from daily returns
     if smoothing:
         asset_data = asset_data.resample('ME').mean()
-        sp500_data = sp500_data.resample('ME').mean()
+        sp500_data = sp500_data.resample('ME').mean(numeric_only=True)
     else:
         asset_data = asset_data.resample('ME').last()
         sp500_data = sp500_data.resample('ME').last()

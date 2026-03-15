@@ -10,8 +10,8 @@ DEBUG_MAIN_ABNORMAL=False
 binary_gate=False
 rebalancing_filter = 'monthly' 
 rebalancing_portfolios = 30 
-advanced_scoring = True
-equal_weights=False
+advanced_scoring = False
+equal_weights=True
 smoothing=True
 ENABLE_LOGGING = False  # Enable rebalancing logging to CSV files
 
