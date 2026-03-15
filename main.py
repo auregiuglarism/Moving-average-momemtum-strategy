@@ -17,6 +17,7 @@ from utils.portfolios import compute_portfolios_timeframe, build_portfolio_compo
 from utils.logging_rebalance import RebalancingLogger
 from utils.portfolio_tracker import PortfolioTracker
 from utils.data_validation import filter_clean_universe
+from utils.risk import compute_betas, estimate_factor_risk_premium
 
 from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, ENABLE_LOGGING, smoothing
 
@@ -213,6 +214,20 @@ plt.ylabel("Portfolio Value($)")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# --- Factor Regression ---
+# Does more risk equal to more returns?
+# Step 1: Compute betas for all assets
+betas = compute_betas(scored_assets, sp500_df['Change %'])
+print("\nComputed Betas for all assets.")
+
+# Step 2: Estimate factor risk premium using cross-sectional regression
+# Create a DataFrame with portfolio returns and betas
+returns_t = cumulative_df['pf_long'].pct_change().dropna()  # Use portfolio returns as dependent variable
+factor_risk_premium = estimate_factor_risk_premium(returns_t, betas)
+print(f"\nEstimated Factor Risk Premium: {factor_risk_premium:.4f}")
+
+
 
 
 

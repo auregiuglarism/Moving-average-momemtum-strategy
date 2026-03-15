@@ -38,7 +38,7 @@ def compute_betas(asset_data_list, factor_returns):
     for asset_df in asset_data_list:
 
         if "Return" not in asset_df.columns:
-            asset_df["Return"] = asset_df["price"].pct_change()
+            asset_df["Return"] = asset_df["Close"].pct_change()
 
         beta, alpha = compute_asset_beta(asset_df["Return"], factor_returns)
 
