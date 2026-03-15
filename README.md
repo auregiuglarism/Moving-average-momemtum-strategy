@@ -1,5 +1,7 @@
 # Moving-average-momentum-strategy
 
+>[!Warning] Normal scoring gives a S&P 500 return of around 13% per year. However Advanced scoring gives a S&P 500 return of around 14% per year. This signals a slight error in some computations, the returns of the index should not vary, only the portfolios should. We are currently investigating it. We recommend to be cautious when interpreting the results of the strategy.
+
 Make sure to install all the necessary dependencies before running the code. You can do this by running:
 ```pip install -r requirements.txt
 ```
@@ -33,3 +35,15 @@ We construct our portfolio by selecting the top 30 stocks based on the composite
 - pf_ls_short: the long-short portfolio, which consists of the top 30 and bottom 30 stocks based on the composite score
 - pf_mimicking: the mimicking portfolio, which consists of the top 50% and bottom 50% stocks based on the composite score.
  We rebalance our portfolio monthly, which means we will update our stock selection and weights every month based on the latest scores. The portfolio construction and rebalancing logic is implemented in the `portfolio.py` file.
+
+## Risk Premium & Factor Regression
+We are trying to answer the question: does more risk equal to more returns? To answer this question, we will compute the risk premium of our strategy and run a factor regression to see if our strategy respects the logic. The risk premium computation and factor regression are implemented in the `risk.py` file.
+
+We find /lambda/ < 0, for both of our advanced and normal scoring strategies. This means stocks with higher betas (riskier) earned slightly lower returns on average over our sample for both scoring methods.
+If it were positive, riskier assets earned more (classic risk-return trade-off).Here, negative could mean:
+- Our composite scores  and thus factors are not priced (market doesn’t reward it),
+- Or our sample period had underperformance of high-beta (high-risk) stocks.
+
+After performing a statistical t-test, we also find that both scoring method have a test statistic which is insignificant at the 5% level, meaning we cannot reject the null hypothesis that /lambda/ = 0. This suggests that there is no statistically significant relationship between risk and return in our sample for both scoring methods.
+
+
