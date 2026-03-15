@@ -17,9 +17,9 @@ from utils.portfolios import compute_portfolios_timeframe, build_portfolio_compo
 from utils.logging_rebalance import RebalancingLogger
 from utils.portfolio_tracker import PortfolioTracker
 from utils.data_validation import filter_clean_universe
-from utils.risk import compute_betas, estimate_factor_risk_premium
+from utils.risk import compute_betas, estimate_factor_risk_premium, test_factor_pricing
 
-from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, ENABLE_LOGGING, smoothing
+from config import DEBUG_MAIN, DEBUG_MAIN_ABNORMAL, GRAPHS, rebalancing_filter, rebalancing_portfolios, advanced_scoring, dates, binary_gate, equal_weights, start_value, ENABLE_LOGGING, smoothing
 
 if __name__ == "__main__":
     # --- Step 0: Declaration ---
@@ -201,31 +201,46 @@ if ENABLE_LOGGING:
     print("\nRebalancing logs saved to Logs/ directory")
 
 # Plot all three portfolios on the same graph + S&P 500 for comparison
-plt.figure(figsize=(12,6))
-plt.plot(cumulative_df.index, cumulative_df['pf_long'], label='Long Top 30')
-plt.plot(cumulative_df.index, cumulative_df['pf_long_short'], label='Long-Short Top/Bottom 30')
-plt.plot(cumulative_df.index, cumulative_df['pf_mimicking'], label='Factor Mimicking')
-plt.plot(cumulative_df.index, sp500_cumulative_aligned, label='S&P 500', linestyle='--', color='black')
+if GRAPHS:
+    plt.figure(figsize=(12,6))
+    plt.plot(cumulative_df.index, cumulative_df['pf_long'], label='Long Top 30')
+    plt.plot(cumulative_df.index, cumulative_df['pf_long_short'], label='Long-Short Top/Bottom 30')
+    plt.plot(cumulative_df.index, cumulative_df['pf_mimicking'], label='Factor Mimicking')
+    plt.plot(cumulative_df.index, sp500_cumulative_aligned, label='S&P 500', linestyle='--', color='black')
 
-plt.suptitle("Growth of $1 Invested in Each Portfolio", fontsize=14)
-plt.title(f"Rebalancing Monthly | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
-plt.xlabel("Date")
-plt.ylabel("Portfolio Value($)")
-plt.legend()
-plt.grid(True)
-plt.show()
+    plt.suptitle("Growth of $1 Invested in Each Portfolio", fontsize=14)
+    plt.title(f"Rebalancing Monthly | {dates[0]} to {dates[-1]} | Advanced scoring strategy: {advanced_scoring}, Binary gate: {binary_gate}", fontsize=10)
+    plt.xlabel("Date")
+    plt.ylabel("Portfolio Value($)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 # --- Factor Regression ---
 # Does more risk equal to more returns?
 # Step 1: Compute betas for all assets
 betas = compute_betas(scored_assets, sp500_df['Change %'])
 print("\nComputed Betas for all assets.")
+if DEBUG_MAIN:
+    print(betas.head())  # Print all betas in debug mode
 
 # Step 2: Estimate factor risk premium using cross-sectional regression
-# Create a DataFrame with portfolio returns and betas
-returns_t = cumulative_df['pf_long'].pct_change().dropna()  # Use portfolio returns as dependent variable
-factor_risk_premium = estimate_factor_risk_premium(returns_t, betas)
-print(f"\nEstimated Factor Risk Premium: {factor_risk_premium:.4f}")
+if DEBUG_MAIN:
+    print(type(scored_assets))
+    print(len(scored_assets))
+    print(scored_assets[0].columns)
+# Get matrix of all asset returns
+returns_matrix = pd.DataFrame({
+    ticker: df["Return"]
+    for ticker, df in zip(betas.index, scored_assets)
+})
+
+gammas, lamda_factor = estimate_factor_risk_premium(returns_matrix, betas)
+print(f"\nEstimated Factor Risk Premium: {lamda_factor:.4f}")
+
+# --- Is the obtained lambda statistically different from zero ? ---
+lambda_factor, t_stat = test_factor_pricing(gammas)
+print(f"Factor risk premium (lambda): {lambda_factor:.4f}, t-statistic: {t_stat:.2f}")
 
 
 

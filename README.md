@@ -1,5 +1,9 @@
 # Moving-average-momentum-strategy
 
+Make sure to install all the necessary dependencies before running the code. You can do this by running:
+```pip install -r requirements.txt
+```
+
 ## Data
 The data used in this project is the daily closing price of all stocks that have been in the S&P 500 index from 2020 (post financial crisis) until now (January 2026). The data is sourced from Yahoo Finance and is available in the `data` folder of this repository.
 

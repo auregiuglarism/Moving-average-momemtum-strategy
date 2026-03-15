@@ -6,11 +6,12 @@ DEBUG_PORTFOLIOS=False
 # main.py config
 DEBUG_MAIN=False
 DEBUG_MAIN_ABNORMAL=False
+GRAPHS=False
 
 binary_gate=False
 rebalancing_filter = 'monthly' 
 rebalancing_portfolios = 30 
-advanced_scoring = False
+advanced_scoring = True
 equal_weights=True
 smoothing=True
 ENABLE_LOGGING = False  # Enable rebalancing logging to CSV files
