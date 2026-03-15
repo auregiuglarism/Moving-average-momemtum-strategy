@@ -1,9 +1,11 @@
 # Moving-average-momentum-strategy
 
->[!Warning] Normal scoring gives a S&P 500 return of around 13% per year. However Advanced scoring gives a S&P 500 return of around 14% per year. This signals a slight error in some computations, the returns of the index should not vary, only the portfolios should. We are currently investigating it. We recommend to be cautious when interpreting the results of the strategy.
+> [!WARNING]  
+> Normal scoring gives a S&P 500 return of around 13% per year. However Advanced scoring gives a S&P 500 return of around 14% per year. This signals a slight error in some computations, the returns of the index should not vary, only the portfolios should. We are currently investigating it. We recommend to be cautious when interpreting the results of the strategy.
 
 Make sure to install all the necessary dependencies before running the code. You can do this by running:
-```pip install -r requirements.txt
+```
+pip install -r requirements.txt
 ```
 
 ## Data
@@ -45,5 +47,7 @@ If it were positive, riskier assets earned more (classic risk-return trade-off).
 - Or our sample period had underperformance of high-beta (high-risk) stocks.
 
 After performing a statistical t-test, we also find that both scoring method have a test statistic which is insignificant at the 5% level, meaning we cannot reject the null hypothesis that /lambda/ = 0. This suggests that there is no statistically significant relationship between risk and return in our sample for both scoring methods.
+
+Thus our trading strategy does not seem to be rewarded for taking on more risk, and the risk-return trade-off does not hold in our sample period. This strategy should not be considered as a viable strategy that will earn market beating returns by taking on more risk.
 
 
